@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 namespace hotel
 {
@@ -26,7 +29,37 @@ namespace hotel
         {
             services.AddDbContext<HotelDbContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
-
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+       .AddJwtBearer(options =>
+       {
+           options.TokenValidationParameters = new TokenValidationParameters
+           {
+               ValidateIssuer = true,
+               ValidateAudience = true,
+               ValidateLifetime = true,
+               ValidateIssuerSigningKey = true,
+               ValidIssuer = "yourdomain.com",
+               ValidAudience = "yourdomain.com",
+               IssuerSigningKey = new SymmetricSecurityKey(
+                   Encoding.UTF8.GetBytes("1234567890123456")),
+               ClockSkew = TimeSpan.FromMinutes(0)
+           };
+           options.Events = new JwtBearerEvents
+           {
+               OnAuthenticationFailed = context =>
+               {
+                   Console.WriteLine("OnAuthenticationFailed: " +
+                       context.Exception.Message);
+                   return Task.CompletedTask;
+               },
+               OnTokenValidated = context =>
+               {
+                   Console.WriteLine("OnTokenValidated: " +
+                       context.SecurityToken);
+                   return Task.CompletedTask;
+               }
+           };
+       });
             services.AddMvc();
         }
 
@@ -47,7 +80,7 @@ namespace hotel
             }
 
             app.UseStaticFiles();
-
+            app.UseAuthentication();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
