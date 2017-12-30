@@ -21,5 +21,6 @@ namespace hotel
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .Build();
+        //test
     }
 }
